@@ -4303,6 +4303,10 @@ ENGINE_ERROR_CODE EventuallyPersistentEngine::doSeqnoStats(const void *cookie,
         if (vb->getState() != vbucket_state_active) {
             relHighSeqno = vb->checkpointManager.getLastClosedChkBySeqno();
         }
+        if (vb->getState() != vbucket_state_active && vb->getState() != vbucket_state_replica)
+        {
+            LOG(EXTENSION_LOG_WARNING, "vbucket %d state %d", vbucket, vb->getState());
+        }
 
         char buffer[32];
         failover_entry_t entry = vb->failovers->getLatestEntry();
@@ -6121,7 +6125,6 @@ ENGINE_ERROR_CODE EventuallyPersistentEngine::getAllVBucketSequenceNumbers(const
         RCPtr<VBucket> vb = getVBucket(id);
         if (vb) {
             auto state = vb->getState();
-            if (state == vbucket_state_active || state == vbucket_state_replica) {
                 uint16_t vbid = htons(static_cast<uint16_t>(id));
                 uint64_t highSeqno;
                 if (vb->getState() == vbucket_state_active) {
@@ -6134,7 +6137,6 @@ ENGINE_ERROR_CODE EventuallyPersistentEngine::getAllVBucketSequenceNumbers(const
                 memcpy(payload.data() + offset, &vbid, sizeof(vbid));
                 memcpy(payload.data() + offset + sizeof(vbid), &highSeqno,
                        sizeof(highSeqno));
-            }
         }
     }
 
